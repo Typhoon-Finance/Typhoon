@@ -5,7 +5,7 @@ import {SafeMath} from '../SafeMath.sol';
 import {IERC20} from '../../interfaces/IERC20.sol';
 import {SafeERC20} from '../SafeERC20.sol';
 import {IFlashLoanReceiver} from '../../interfaces/aaveV2/IFlashLoanReceiver.sol';
-import {ILendingPoolAddressesProvider} from '../interfaces/aaveV2/ILendingPoolAddressesProvider.sol';
+import {ILendingPoolAddressesProvider} from '../../interfaces/aaveV2/ILendingPoolAddressesProvider.sol';
 import {ILendingPool} from '../../interfaces/aaveV2/ILendingPool.sol';
 
 abstract contract FlashLoanReceiverBase is IFlashLoanReceiver {

@@ -13,7 +13,7 @@ import { IUniswapV2Router02 } from "./interfaces/uniswap/IUniswapV2Router02.sol"
 import { IWETH } from "./interfaces/aaveV2/IWETH.sol";
 
 
-contract FlashloanV2 is FlashLoanReceiverBase {
+contract Flashloan is FlashLoanReceiverBase {
     using SafeMath for uint256;
 
     constructor(ILendingPoolAddressesProvider _addressProvider) FlashLoanReceiverBase(_addressProvider) {
@@ -40,22 +40,19 @@ contract FlashloanV2 is FlashLoanReceiverBase {
         //
 
         // Decode abi in params to get _exchanges from flashloanCall()
-        (address[] memory exchanges, address[] memory tokens) = abi.decode(params);
+        (address[] memory exchanges, address[] memory tokens) = abi.decode(params, (address[], address[]));
         require(tokens[0] == assets[0], "Initial token addresses do not match");
         require(tokens[tokens.length - 1] == assets[0], "Last token address does not match token owed");
 
         // Set function variables for swap in FOR loop
         // FOR loop will swap based on token and exchange path from decoded params
-        uint amountsIn = amounts[0];
-        uint amountsOut = 0;
+        uint amount = amounts[0];
         address[] memory path = new address[](2);
         for(uint i=0; exchanges.length > i; i++) {
-            if (tokens[i + 1]) {
+            if (tokens[i + 1] != address(0)) {
                 path[0] = tokens[i];
                 path[1] = tokens[i + 1];
-
-                amountsOut = _swap(path, amountsIn, exchanges[i]);
-                amountsIn = amountsOut;
+                amount = _swap(path, amount, exchanges[i]);
             }
         }
 
@@ -66,11 +63,11 @@ contract FlashloanV2 is FlashLoanReceiverBase {
 
         // Approve the LendingPool contract allowance to *pull* the owed amount
         uint amountOwing = amounts[0].add(premiums[0]);
-        require(returnAmount > amountOwing, "Not enough earned to pay back lending pool");
+        require(amount > amountOwing, "Not enough earned to pay back lending pool");
         IERC20(assets[0]).approve(address(LENDING_POOL), amountOwing);
         
         // Return any profit to user after repayment of flashloan
-        uint profit = returnAmount.sub(amountOwing);
+        uint profit = amount.sub(amountOwing);
         IERC20(assets[0]).transfer(initiator, profit);
 
         return true;
