@@ -1,0 +1,50 @@
+
+ .Strategizer-Table-Container {
+   padding: 30px;
+   height: 76vh;
+ }
+
+ .Header-Inputs-Section {
+     text-align: left;
+}
+
+.Inputs-Text {
+
+  text-align: left;
+  /* width: 100%; */
+  margin: 0;
+
+}
+
+.codexpl td, #codexpl td{
+  padding:0.8em;
+  /* width: 100%; */
+  border: 1px solid;
+}
+.codexpl th{
+  background-color:#6699FF;
+  font-weight:bold;
+}
+
+.col1 {
+  width: 5vw;
+  /* min-width: 100px; */
+  /* min-width: 400px; */
+}
+
+.col2 {
+  width: 20vw;
+}
+
+.col3 {
+  width: 20vw;
+}
+
+.col4 {
+  width: 20vw;
+}
+
+.col5 {
+  width: 27vw;
+}
+
