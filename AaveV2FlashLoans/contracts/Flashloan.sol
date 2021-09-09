@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
+import "hardhat/console.sol";
+
 import { FlashLoanReceiverBase } from "./libraries/aaveV2/FlashLoanReceiverBase.sol";
 import { IERC20 } from "./interfaces/IERC20.sol";
 import { ILendingPool } from "./interfaces/aaveV2/ILendingPool.sol";
@@ -40,7 +42,8 @@ contract Flashloan is FlashLoanReceiverBase {
         //
 
         // Decode abi in params to get _exchanges from flashloanCall()
-        (address[] memory exchanges, address[] memory tokens) = abi.decode(params, (address[], address[]));
+        (address[] memory exchanges, address[] memory tokens, address user) = abi.decode(params, (address[], address[], address));
+
         require(tokens[0] == assets[0], "Initial token addresses do not match");
         require(tokens[tokens.length - 1] == assets[0], "Last token address does not match token owed");
 
@@ -67,8 +70,7 @@ contract Flashloan is FlashLoanReceiverBase {
         IERC20(assets[0]).approve(address(LENDING_POOL), amountOwing);
         
         // Return any profit to user after repayment of flashloan
-        uint profit = amount.sub(amountOwing);
-        IERC20(assets[0]).transfer(initiator, profit);
+        IERC20(assets[0]).transferFrom(initiator, user, amount.sub(amountOwing));
 
         return true;
     }
@@ -94,7 +96,7 @@ contract Flashloan is FlashLoanReceiverBase {
         // within executeOperation()
 
         // bytes memory params = ""; // <=== ADD HERE!
-        bytes memory params = abi.encode(_exchanges, _tokens);
+        bytes memory params = abi.encode(_exchanges, _tokens, onBehalfOf);
         uint16 referralCode = 0;
 
         LENDING_POOL.flashLoan(
@@ -115,5 +117,17 @@ contract Flashloan is FlashLoanReceiverBase {
     
     function getBalance(address _assetAddress) external view returns (uint256) {
         return IERC20(_assetAddress).balanceOf(address(this));
+    }
+
+    // HELPER - This function is ONLY for testing
+    // ***** DELETE BEFORE DEPLOYMENT *****
+    function swapETHForDAI() external payable {
+        IUniswapV2Router02 router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+        
+        address[] memory path = new address[](2);
+        path[0] = router.WETH();
+        path[1] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+
+        router.swapExactETHForTokens{value: msg.value}(0, path, msg.sender, block.timestamp);
     }
 }
