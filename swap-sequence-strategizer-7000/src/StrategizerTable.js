@@ -1,17 +1,59 @@
 import './StrategizerTable.css'
 import React, { Component } from 'react';
-import { w3cwebsocket as W3CWebSocket } from "websocket";
 import env from "react-dotenv";
 import axios from 'axios';
 
 console.log('key is: ', env.CRYPTO_COMPARE_KEY)
 
-// const GET_PRICES_REFRESH_SECONDS = 11;
 const GET_PRICES_REFRESH_SECONDS = 100;
 
 // const client = new W3CWebSocket('wss://streamer.cryptocompare.com/v2?apikey=' + env.CRYPTO_COMPARE_KEY);
 
-const tickers = ['WETH', 'WBTC', 'USDT', 'DIGG', 'LTC', 'DOGE', 'SOL', 'ADA', 'DAI', 'SAI', 'BADGER', 'ETH', 'MANA', 'MATIC', 'SUSHI', 'XRP', 'DOT', 'UNI', 'LINK', 'BCH'];
+// const tickers = [
+//   'WETH', 'WBTC', 'DOGE', 'TORN', 'ADA', 
+//   'ADDY', 'SUSHI', 'MANA', 'WMATIC', 'YFI',
+//   // 'WOO', 'WOLF', 'wFIL', 'UNI', 'UMA', 'SAND',
+//   'DIGG', 'BADGER', 'ETH', 'BTC'
+
+// ];
+
+const tickers = ['WETH', 'WBTC', 'USDT', 'DIGG', 'BADGER',  'SUSHI', 'UNI', 'LINK', 'BCH', 'DAI'];
+
+// const tickers = [
+
+// 'WBTC',
+// 'WETH',
+// // WBTC
+// // Wrapped BTC
+// // 0
+// // wCCX
+// // wCCX
+// // WrappedConceal
+// // 0
+// 'wFIL',
+// // wFIL
+// // Wrapped Filecoin
+// // 0
+// // WMATIC
+// 'WMATIC',
+// // Wrapped Matic
+// // 0
+// // WOLF
+// // WOLF
+// // Moonwolf
+// // 0
+// 'WOO',
+// // WOO
+// // Wootrade
+// // 0
+// // WOOFY
+// // WOOFY
+// // Woofy
+// // 0
+// 'YFI'
+// // YFI
+
+// ]
 
 const stringifiedTickers = tickers.join(',')
 
@@ -29,14 +71,26 @@ const handpickedStrategies = [
   ['WETH', 'BADGER', 'WBTC', 'WETH'],
   ['WETH', 'DAI', 'WBTC', 'WETH'],
   ['WETH', 'UNI', 'LINK', 'WETH'],
-  ['WETH', 'LINK', 'UNI', 'WETH']
+  ['WETH', 'LINK', 'UNI', 'WETH'],
+  ['ETH', 'WBTC', 'DIGG', 'ETH'],
+  ['ETH', 'WBTC', 'BADGER', 'ETH'],
+  ['ETH', 'WBTC', 'DAI', 'ETH'],
+  ['ETH', 'DIGG', 'WBTC', 'ETH'],
+  ['ETH', 'BADGER', 'WBTC', 'ETH'],
+  ['ETH', 'DAI', 'WBTC', 'ETH'],
+  ['ETH', 'UNI', 'LINK', 'ETH'],
+  ['ETH', 'LINK', 'UNI', 'ETH'],
+  ['ETH', 'BTC', 'DIGG', 'ETH'],
+  ['ETH', 'BTC', 'BADGER', 'ETH'],
+  ['ETH', 'BTC', 'DAI', 'ETH'],
+  ['ETH', 'DIGG', 'BTC', 'ETH'],
+  ['ETH', 'BADGER', 'BTC', 'ETH'],
+  ['ETH', 'DAI', 'BTC', 'ETH']
 ]
 
 const ccPriceMultiBaseUrl = 'https://min-api.cryptocompare.com/data/pricemulti';
 
 class StrategizerTable extends Component {
-
-  gudStuff = 'foo';
 
   constructor(props) {
 
@@ -129,8 +183,6 @@ class StrategizerTable extends Component {
         const toToken = strategyTokens[tokenIndex + 1];
         console.log('from token: ', fromToken, ' to token: ', toToken);
 
-        const bestSwapPrices = [];
-
         let exchangePricesForSwap = [];
 
         console.log('exchanges are: ', exchanges)
@@ -148,8 +200,6 @@ class StrategizerTable extends Component {
             console.log(typeof price)
             console.log(`price exists for ${fromToken} to ${toToken} on ${exchangeToCheck}: ${price}`);
             exchangePricesForSwap.push(price);
-
-            console.log('k ' + exchangePricesForSwap)
 
           }
 
@@ -171,13 +221,11 @@ class StrategizerTable extends Component {
             console.log(`price exists for ${fromToken} to ${toToken} on ${exchangeToCheck}: ${price}`);
             exchangePricesForSwap.push(price);
 
-            console.log('k2 ' + exchangePricesForSwap)
-
           } else {
             exchangePricesForSwap.push(Infinity);
           }
 
-          console.log('uhh ' + exchangePricesForSwap)
+          console.log('exchangePricesForSwap: ' + exchangePricesForSwap)
 
           if (exchangeIndex === exchanges.length - 1) {
 
@@ -211,12 +259,6 @@ class StrategizerTable extends Component {
   calcualteNetProfitOfStrategy(borrowAmount, prices) {
 
     console.log('calculating net profit for these: ', borrowAmount, prices);
-
-    // const amountAfterTrades = prices.reduce( (accumulator, price) => {
-
-
-
-    // }, 0);
 
     let amountAfterTrades = borrowAmount;
 
@@ -346,7 +388,6 @@ class StrategizerTable extends Component {
           <p>Data coming in from CryptoCompare</p>
           <p>Calling for more data in: {this.state.countdownText}</p>
           <br />
-          {/* <ul> */}
 
           {this.state.latestPrices.length && this.state.latestPrices.map((exchangePrices, index) => {
 
@@ -396,7 +437,6 @@ class StrategizerTable extends Component {
             </tr>
 
             {this.state.rankedStrategies.map((rankedStrategy, strageyRanking) => {
-              // { this.state.rank }
 
               return <tr>
                 <td>{strageyRanking + 1}</td>
@@ -411,7 +451,7 @@ class StrategizerTable extends Component {
                   })}
                 </td>
                 <td>
-                {rankedStrategy.exchangeChoices.map(token => {
+                  {rankedStrategy.exchangeChoices.map(token => {
                     return <div>
                       {token}
                       < br />↓<br />
@@ -426,7 +466,7 @@ class StrategizerTable extends Component {
                 </td>
               </tr>
             })}
-            
+
           </table>
         </div>
 
