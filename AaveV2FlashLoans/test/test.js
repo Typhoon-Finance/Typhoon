@@ -8,9 +8,10 @@ describe("Flashloan using Aave V2 Protocol", function () {
 
   before(async function () {
     const lendingPoolAddressProvider = "0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5";
+    const tellorOracleAddress = "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0";
 
     const Flashloan = await ethers.getContractFactory("Flashloan");
-    instance = await Flashloan.deploy(lendingPoolAddressProvider);
+    instance = await Flashloan.deploy(lendingPoolAddressProvider, tellorOracleAddress);
     await instance.deployed();
 
     const [ user ] = await ethers.getSigners();

@@ -4,21 +4,26 @@ pragma abicoder v2;
 
 import "hardhat/console.sol";
 
+// AaveV2 imports
 import { FlashLoanReceiverBase } from "./libraries/aaveV2/FlashLoanReceiverBase.sol";
-import { IERC20 } from "./interfaces/IERC20.sol";
 import { ILendingPool } from "./interfaces/aaveV2/ILendingPool.sol";
 import { ILendingPoolAddressesProvider } from "./interfaces/aaveV2/ILendingPoolAddressesProvider.sol";
-import { SafeMath } from "./libraries/SafeMath.sol";
-
-import { IUniswapV2Router02 } from "./interfaces/uniswap/IUniswapV2Router02.sol";
-
 import { IWETH } from "./interfaces/aaveV2/IWETH.sol";
 
+// OpenZeppelin imports
+import { IERC20 } from "./interfaces/IERC20.sol";
+import { SafeMath } from "./libraries/SafeMath.sol";
 
-contract Flashloan is FlashLoanReceiverBase {
+// UniswapV2 Router import
+import { IUniswapV2Router02 } from "./interfaces/uniswap/IUniswapV2Router02.sol";
+
+// Tellor import
+import "usingtellor/contracts/UsingTellor.sol";
+
+contract Flashloan is FlashLoanReceiverBase, UsingTellor {
     using SafeMath for uint256;
 
-    constructor(ILendingPoolAddressesProvider _addressProvider) FlashLoanReceiverBase(_addressProvider) {
+    constructor(ILendingPoolAddressesProvider _addressProvider, address payable _tellorAddress) FlashLoanReceiverBase(_addressProvider) UsingTellor(_tellorAddress) {
         // No additional logic
     }
 
