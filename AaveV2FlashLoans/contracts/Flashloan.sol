@@ -60,6 +60,9 @@ contract Flashloan is FlashLoanReceiverBase, UsingTellor {
             if (tokens[i + 1] != address(0)) {
                 path[0] = tokens[i];
                 path[1] = tokens[i + 1];
+                /** 
+                    Insert price check logic
+                */
                 amount = _swap(path, amount, exchanges[i]);
             }
         }
@@ -118,6 +121,22 @@ contract Flashloan is FlashLoanReceiverBase, UsingTellor {
     function _swap(address[] memory _path, uint256 _amountIn, address _routerAddress) internal returns (uint256 tokenOut) {
         IERC20(_path[0]).approve(_routerAddress, _amountIn);
         tokenOut = IUniswapV2Router02(_routerAddress).swapExactTokensForTokens(_amountIn, 0, _path, address(this), block.timestamp)[1];
+    }
+
+    // priceDoubleCheck(["WETH", "WBTC", "MATIC", "WETH"], [ 1.234, 0.45345, 3.12343 ], [ 5, 20, 5 ]);
+    function priceDoubleCheck (
+        address[]  memory _path,
+        uint256[]  memory _pricesOnExchange,
+        uint256[]  memory _tellorRequestId,
+        uint256[]  memory _riskTolerance,
+        bool              _ignoreUnrecognizedTokens
+    ) public returns (bool) {
+        // call tellor for price info of the inputs tokens
+        retrieveData(_tellorRequestId, block.timestamp - 3600); // 3600 seconds in 1 hour
+
+        // for each price, compare original and doubleCheck price, get % difference
+
+        return true;
     }
     
     function getBalance(address _assetAddress) external view returns (uint256) {
