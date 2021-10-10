@@ -5,6 +5,9 @@ import "./interfaces/IERC20.sol";
 import "./interfaces/IERC3156FlashBorrower.sol";
 import "./interfaces/IERC3156FlashLender.sol";
 
+// Oracles
+// import "usingtellor/contracts/UsingTellor.sol";
+import "./interfaces/chainlink/AggregatorV3Interface.sol";
 
 /**
  * @author Alberto Cuesta Cañada
@@ -16,6 +19,17 @@ contract FlashLender is IERC3156FlashLender {
     mapping(address => bool) public supportedTokens;
     uint256 public fee; //  1 == 0.0001 %.
 
+    // Custom variables
+    // struct Feed {
+    //     uint8   decimals;
+    //     address token;
+    //     address comparedTo;
+    //     address priceFeed;
+    // }
+
+    mapping(address => address) private chainlinkPriceFeeds; // All pricefeeds will be compared to USD
+    mapping(address => uint256) private tellorPriceFeeds; // All pricefeeds will be compared to USD
+    int256 private slippageTolerance = 20; // 20%
 
     /**
      * @param supportedTokens_ Token contracts supported for flash lending.
@@ -23,12 +37,48 @@ contract FlashLender is IERC3156FlashLender {
      */
     constructor(
         address[] memory supportedTokens_,
-        uint256 fee_
+        uint256 fee_,
+        address[] memory chainlinkPriceFeeds_,
+        uint256[] memory tellorPriceFeeds_
     ) {
+        require(supportedTokens_.length == chainlinkPriceFeeds_.length, "tokens and price feeds do not match");
         for (uint256 i = 0; i < supportedTokens_.length; i++) {
             supportedTokens[supportedTokens_[i]] = true;
         }
         fee = fee_;
+
+        for (uint256 i = 0; i < chainlinkPriceFeeds_.length; i++) {
+            setPriceFeedFromChainlink(supportedTokens_[i], chainlinkPriceFeeds_[i]);
+        }
+
+        for (uint256 i = 0; i < tellorPriceFeeds_.length; i++) {
+            setPriceFeedFromTellor(supportedTokens_[i], tellorPriceFeeds_[i]);
+        }
+    }
+
+    // *** Test ***
+    // ADD this function in a FOR loop to insert pricefeed for every
+    // supported token in this contract.
+    function setPriceFeedFromChainlink(address token_, address priceFeed_) internal {
+        chainlinkPriceFeeds[token_] = priceFeed_;
+    }
+
+    function setPriceFeedFromTellor(address token_, uint256 requestId_) internal {
+        tellorPriceFeeds[token_] = requestId_;
+    }
+
+    // *** Test ***
+    function getLatestPriceFromChainlink(address priceFeed_) public view returns (int256 price, uint256 timestamp) {
+        (,price,,timestamp,) = AggregatorV3Interface(priceFeed_).latestRoundData();
+    }
+
+    // *** Test ***
+    // function getLatestPriceFromTellor(uint256 requestId_) public view returns (int256 price, uint256 timestamp) {
+    //     getCurrentValue(requestId_);
+    // }
+
+    function getPricesFromExchanges(address token) internal returns (uint256) {
+        // Compare token price to USDC
     }
 
     /**
@@ -53,6 +103,9 @@ contract FlashLender is IERC3156FlashLender {
         /******************************************************************************************************** 
             INSERT oracle pricing here of token borrowed and relevant pairs (maybe to USD too as reference)
         ********************************************************************************************************/
+        // GetPriceFeed function
+        (int256 oraclePrice,) = getLatestPriceFromChainlink(chainlinkPriceFeeds[token]);
+        int256 tolerance = oraclePrice * slippageTolerance / 100;
 
         require(
             IERC20(token).transfer(address(receiver), amount),
@@ -67,6 +120,10 @@ contract FlashLender is IERC3156FlashLender {
             CHECK oracle pricing again to monitor prices changes
             If price differentiates too much from original check, then REVERT!
         ********************************************************************************************************/
+        // Do math
+        // Multiply oracle price by slippageTolerance
+        // Get DEX prices of token and compare to slippageTolerance
+        // If lower than slippageTolerance, REVERT!
 
         require(
             IERC20(token).transferFrom(address(receiver), address(this), amount + fee),
