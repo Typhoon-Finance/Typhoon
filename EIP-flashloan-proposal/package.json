@@ -10,5 +10,8 @@
     "ethereum-waffle": "^3.0.0",
     "ethers": "^5.0.0",
     "hardhat": "^2.6.5"
+  },
+  "dependencies": {
+    "usingtellor": "^3.0.3"
   }
 }
