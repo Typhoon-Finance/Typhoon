@@ -8,7 +8,7 @@ import "./interfaces/IERC3156FlashLender.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 
 // Oracles
-import "../node_modules/usingtellor/contracts/UsingTellor.sol";
+import "usingtellor/contracts/UsingTellor.sol";
 import "./interfaces/chainlink/AggregatorV3Interface.sol";
 
 /**
@@ -184,6 +184,18 @@ contract FlashLender is IERC3156FlashLender, UsingTellor {
         address token
     ) external view override returns (uint256) {
         return supportedTokens[token] ? IERC20(token).balanceOf(address(this)) : 0;
+    }
+
+    // HELPER - This function is ONLY for testing
+    // ***** DELETE BEFORE DEPLOYMENT *****
+    function swapETHForDAI() external payable {
+        IUniswapV2Router02 router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+        
+        address[] memory path = new address[](2);
+        path[0] = router.WETH();
+        path[1] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+
+        router.swapExactETHForTokens{value: msg.value}(0, path, msg.sender, block.timestamp);
     }
 }
 
