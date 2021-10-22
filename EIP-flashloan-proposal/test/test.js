@@ -73,7 +73,7 @@ describe("*Typhoon* Flashloan Standard", function() {
 
 
   it("Able to get tellor oracle price", async () => {
-    const price = await flashLender.getLatestPriceFromTellor("0x4746DeC9e833A82EC7C2C1356372CcF2cfcD2F3D");
+    const price = await flashLender.getLatestPriceFromTellor(39);
     console.log(ethers.utils.formatEther(price));
     expect(ethers.utils.formatEther(price));
   });
