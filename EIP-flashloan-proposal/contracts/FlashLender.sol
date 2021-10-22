@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
+
 import "./interfaces/IERC20.sol";
 import "./interfaces/IERC3156FlashBorrower.sol";
 import "./interfaces/IERC3156FlashLender.sol";
@@ -79,13 +81,13 @@ contract FlashLender is IERC3156FlashLender, UsingTellor {
     }
 
     // *** Test ***
-    function getLatestPriceFromTellor(uint256 requestId_) public view returns (uint256 price, uint256 timestamp) {
-        (, price, timestamp) = getCurrentValue(requestId_);
+    function getLatestPriceFromTellor(uint256 requestId_) public view returns (uint256 price) {
+        (, price,) = getCurrentValue(requestId_);
     }
 
     function getPricesFromExchanges(address token_, uint256 amount_, address[] memory exchanges_) internal view returns (uint256[] memory prices) {
         // Compare token price to USDC
-        address USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174; // USDC address on Polygon
+        address USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // USDC address on Mainnet
         prices = new uint256[](exchanges_.length);
         address[] memory path = new address[](2);
         uint256[] memory results = new uint256[](2);
@@ -93,7 +95,8 @@ contract FlashLender is IERC3156FlashLender, UsingTellor {
             path[0] = USDC;
             path[1] = token_;
             results = IUniswapV2Router02(exchanges_[i]).getAmountsOut(amount_, path);
-            prices[i] = results[1]/results[0];
+            prices[i] = results[1]/results[0] * 10**8;
+            console.log(prices[i]);
         }
     }
 
@@ -110,40 +113,58 @@ contract FlashLender is IERC3156FlashLender, UsingTellor {
         uint256 amount,
         bytes calldata data
     ) external override returns(bool) {
+        console.log("flashLoan called");
         require(
             supportedTokens[token],
             "FlashLender: Unsupported currency"
         );
         uint256 fee_ = _flashFee(amount);
 
+        console.log("fee calculated");
+
         // Get prices from each oracle
         (int256 chainLinkOraclePrice,) = getLatestPriceFromChainlink(chainlinkPriceFeeds[token]);
-        (uint256 tellorOraclePrice,) = getLatestPriceFromTellor(tellorPriceFeeds[token]);
+        console.log("Chainlink price retrieved");
+        // uint256 tellorOraclePrice = getLatestPriceFromTellor(tellorPriceFeeds[token]);
 
+        console.log("Retrieved oracle prices successfully!");
         // Multiply average oracle price by slippageTolerance
-        uint256 tolerance = ((uint256(chainLinkOraclePrice) + tellorOraclePrice)/2) * slippageTolerance / 100;
+        // uint256 tolerance = ((uint256(chainLinkOraclePrice) + tellorOraclePrice)/2) * slippageTolerance / 100;
+        uint256 tolerance = uint256(chainLinkOraclePrice) * (100 - slippageTolerance) / 100;
+
+        console.log("Slippage tolerance calculated successfully!");
 
         require(
             IERC20(token).transfer(address(receiver), amount),
             "FlashLender: Transfer failed"
         );
+
+        console.log("Transfer successfully!");
+
         require(
             receiver.onFlashLoan(msg.sender, token, amount, fee, data) == CALLBACK_SUCCESS,
             "FlashLender: Callback failed"
         );
 
+        console.log("Callback successfully!");
+
         // CHECK oracle pricing again to monitor prices changes
         // Get DEX prices of token and compare to slippageTolerance
         // If price from DEX is lower than slippageTolerance, REVERT transaction
-        uint[] memory prices = getPricesFromExchanges(token, amount, _exchanges);
-        for (uint i=0; prices.length > i; i++) {
-            require(prices[i] >= tolerance, "Token price is too low!");
-        }
 
         require(
             IERC20(token).transferFrom(address(receiver), address(this), amount + fee_),
             "FlashLender: Repay failed"
         );
+
+        console.log("Repaid successfully!");
+
+        uint[] memory prices = getPricesFromExchanges(token, amount, _exchanges);
+        for (uint i=0; prices.length > i; i++) {
+            console.log(tolerance);
+            require(prices[i] >= tolerance, "Token price is too low!");
+        }
+
         return true;
     }
 

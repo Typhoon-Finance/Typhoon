@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
+
 import "./interfaces/IERC20.sol";
 import "./interfaces/IERC3156FlashBorrower.sol";
 import "./interfaces/IERC3156FlashLender.sol";
@@ -33,12 +35,13 @@ contract FlashBorrower is IERC3156FlashBorrower {
             initiator == address(this),
             "FlashBorrower: Untrusted loan initiator"
         );
-        (Action action) = abi.decode(data, (Action));
-        if (action == Action.NORMAL) {
-            // do one thing
-        } else if (action == Action.OTHER) {
-            // do another
-        }
+        // (Action action) = abi.decode(data, (Action));
+        // if (action == Action.NORMAL) {
+        //     // do one thing
+        // } else if (action == Action.OTHER) {
+        //     // do another
+        // }
+
         return keccak256("ERC3156FlashBorrower.onFlashLoan");
     }
 
@@ -49,8 +52,10 @@ contract FlashBorrower is IERC3156FlashBorrower {
     ) public {
         bytes memory data = abi.encode(Action.NORMAL);
         uint256 _allowance = IERC20(token).allowance(address(this), address(lender));
+        console.log("Allowance: ", _allowance);
         uint256 _fee = lender.flashFee(token, amount);
         uint256 _repayment = amount + _fee;
+        console.log("Repay: ", _repayment);
         IERC20(token).approve(address(lender), _allowance + _repayment);
         lender.flashLoan(this, token, amount, data);
     }

@@ -51,17 +51,47 @@ describe("*Typhoon* Flashloan Standard", function() {
     const balance = await dai.balanceOf(account.address);
     expect(parseFloat(ethers.utils.formatEther(balance))).to.be.greaterThan(0);
     
+    const balanceInt = parseFloat(ethers.utils.formatEther(balance));
+    const deposit = balanceInt * 0.7;
+    const borrowerDeposit = balanceInt * 0.1;
+
     // Deposit into FlashLender contract
-    await dai.connect(account).approve(flashLender.address, balance);
-    await dai.connect(account).transferFrom(account.address, flashLender.address, balance);
+    await dai.connect(account).approve(flashLender.address, ethers.utils.parseEther(`${deposit}`));
+    await dai.connect(account).transferFrom(account.address, flashLender.address, ethers.utils.parseEther(`${deposit}`));
+
+    // Deposit some DAI into FlashBorrower contract
+    await dai.connect(account).approve(flashBorrower.address, ethers.utils.parseEther(`${borrowerDeposit}`));
+    await dai.connect(account).transferFrom(account.address, flashBorrower.address, ethers.utils.parseEther(`${borrowerDeposit}`));
 
     const lenderBalance = await dai.balanceOf(flashLender.address);
-    expect(lenderBalance).to.equal(balance);
+    const borrowerBalance = await dai.balanceOf(flashBorrower.address);
+    expect(lenderBalance).to.equal(ethers.utils.parseEther(`${deposit}`));
+    expect(borrowerBalance).to.equal(ethers.utils.parseEther(`${borrowerDeposit}`));
     expect(parseFloat(ethers.utils.formatEther(lenderBalance))).to.be.greaterThan(0);
+    expect(parseFloat(ethers.utils.formatEther(borrowerBalance))).to.be.greaterThan(0);
   });
 
-  it("FlashBorrower can execute flashloan transaction");
-  it("Able to get tellor oracle price");
-  it("Able to get chainlink oracle price");
+
+  it("Able to get tellor oracle price", async () => {
+    const price = await flashLender.getLatestPriceFromTellor("0x4746DeC9e833A82EC7C2C1356372CcF2cfcD2F3D");
+    console.log(ethers.utils.formatEther(price));
+    expect(ethers.utils.formatEther(price));
+  });
+
+  it("Able to get chainlink oracle price", async () => {
+    try {
+      await flashLender.getLatestPriceFromChainlink("0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9");
+    } catch (error) {
+      expect.fail();
+    }
+    // console.log(ethers.BigNumber.from(price));
+    // expect(ethers.BigNumber.from(price));
+  });
+
+  it("FlashBorrower can execute flashloan transaction", async () => {
+    await flashBorrower.flashBorrow(dai.address, ethers.utils.parseEther('1000'));
+    expect(true);
+  });
+
   it("Flashloan reverts when price of token falls below slippage tolerance");
 })
