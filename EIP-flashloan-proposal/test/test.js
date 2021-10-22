@@ -93,5 +93,6 @@ describe("*Typhoon* Flashloan Standard", function() {
     expect(true);
   });
 
+  //Based on prices brought in by both oracles
   it("Flashloan reverts when price of token falls below slippage tolerance");
 })
