@@ -52,10 +52,9 @@ contract FlashBorrower is IERC3156FlashBorrower {
     ) public {
         bytes memory data = abi.encode(Action.NORMAL);
         uint256 _allowance = IERC20(token).allowance(address(this), address(lender));
-        console.log("Allowance: ", _allowance);
         uint256 _fee = lender.flashFee(token, amount);
         uint256 _repayment = amount + _fee;
-        console.log("Repay: ", _repayment);
+        console.log("Repay: ", _repayment/10**18);
         IERC20(token).approve(address(lender), _allowance + _repayment);
         lender.flashLoan(this, token, amount, data);
     }
